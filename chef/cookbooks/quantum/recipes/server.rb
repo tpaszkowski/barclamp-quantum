@@ -22,8 +22,19 @@ unless node[:quantum][:use_gitrepo]
   pkgs.each { |p| package p }
   file "/etc/default/quantum-server" do
     action :delete
-    notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
     not_if { node["platform"] == "suse" }
+    notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
+  end
+  template "/etc/sysconfig/quantum" do
+    source "suse.sysconfig.quantum.erb"
+    owner "root"
+    group "root"
+    mode 0640
+    variables(
+      :plugin_config_file => "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
+    )
+    only_if { node["platform"] == "suse" }
+    notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
   end
 else
   quantum_service_name="quantum-server"
@@ -179,7 +190,7 @@ unless node[:quantum][:use_gitrepo]
     action :enable
     subscribes :restart, resources("template[/etc/quantum/api-paste.ini]"), :immediately
     subscribes :restart, resources("link[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]"), :immediately
-    subscribes :restart, resources("template[/etc/quantum/quantum.conf]")
+    subscribes :restart, resources("template[/etc/quantum/quantum.conf]"), :immediately
   end
 else
   template "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
@@ -191,7 +202,7 @@ else
         :ovs_sql_connection => node[:quantum][:db][:sql_connection]
     )
   end
-  service node[:quantum][:platform][:service_name] do
+  service quantum_service_name do
     supports :status => true, :restart => true
     action :enable
     subscribes :restart, resources("template[/etc/quantum/api-paste.ini]"), :immediately
