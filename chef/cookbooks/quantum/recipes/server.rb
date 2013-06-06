@@ -34,7 +34,7 @@ unless node[:quantum][:use_gitrepo]
       :plugin_config_file => "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
     )
     only_if { node["platform"] == "suse" }
-    notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
+    notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]", :immediately
   end
 else
   quantum_service_name="quantum-server"
