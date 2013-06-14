@@ -219,7 +219,7 @@ vlan_end = vlan_start + 2000
 
 link "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
   to "/etc/quantum/quantum.conf"
-  notifies :restart, resources(:service => quantum_agent), :immediately
+  notifies :restart, resources(:service => quantum_agent)
 end
 
 template "/etc/quantum/quantum.conf" do
