@@ -88,6 +88,7 @@ ruby_block "Find quantum rootwrap" do
       next unless File.executable?(f)
       node[:quantum] ||= Mash.new
       node[:quantum][:rootwrap] = f
+      node.save
       break
     end
     raise("Could not find quantum rootwrap binary!") unless node[:quantum][:rootwrap]
