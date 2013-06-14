@@ -189,7 +189,7 @@ unless node[:quantum][:use_gitrepo]
     supports :status => true, :restart => true
     action :enable
     subscribes :restart, resources("template[/etc/quantum/api-paste.ini]"), :immediately
-    subscribes :restart, resources("link[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]"), :immediately
+    subscribes :restart, resources("link[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]")
     subscribes :restart, resources("template[/etc/quantum/quantum.conf]")
   end
 else
