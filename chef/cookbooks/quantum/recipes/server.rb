@@ -186,6 +186,7 @@ when "openvswitch"
      owner node[:quantum][:platform][:user]
      action :create
      recursive true
+     not_if { node[:platform] == "suse" }
   end
 when "linuxbridge"
   directory "/etc/quantum/plugins/linuxbridge/" do
@@ -193,6 +194,7 @@ when "linuxbridge"
      owner node[:quantum][:platform][:user]
      action :create
      recursive true
+     not_if { node[:platform] == "suse" }
   end
 end
 
