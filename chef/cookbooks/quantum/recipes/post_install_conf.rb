@@ -154,20 +154,12 @@ if node[:quantum][:networking_mode] != "local"
 end
 
 if node[:quantum][:networking_plugin] == "linuxbridge"
-  ruby_block "usurp external bridge" do
-    block do
-      require 'csv'
-      csv_data = `quantum net-list -f csv -c id -c name -- --name floating`
-      Chef::Log.info("CSV data from quantum net-list for floating net: #{csv_data}")
-      name = "brq" + CSV.parse(csv_data)[1][0][0,11]
-      bound_if = (node[:crowbar_wall][:network][:nets][:public].last rescue nil)
-      target = ::Nic.new(name)
-      res = target.usurp(bound_if)
-      # this place is never reached when target.usurp has not moved any ip addresses
-      Chef::Log.info("#{name} usurped #{res[0].join(", ")} addresses from #{bound_if}") unless res[0].empty?
-      Chef::Log.info("#{name} usurped #{res[1].join(", ")} routes from #{bound_if}") unless res[1].empty?
-      node.set[:quantum][:network][:floating_bridge_name] = name
-      node.save
+  bound_if = (node[:crowbar_wall][:network][:nets][:public].last rescue nil)
+  quantum_bridge "floating bridge" do
+    network_name "floating"
+    slaves [bound_if]
+    type "linuxbridge"
+
+    action :create
   end
-end
 end
