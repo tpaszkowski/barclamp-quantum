@@ -46,8 +46,8 @@ locale_additions:
           rabbitmq_instance: RabbitMQ 
           keystone_instance: Keystone 
           attributes: Attributes
-          networking_mode: Mode
           networking_plugin: Plugin
+          networking_mode: Mode
 
 debs:
   ubuntu-12.04:
