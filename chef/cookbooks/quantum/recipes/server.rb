@@ -100,6 +100,13 @@ template "/etc/quantum/api-paste.ini" do
   )
 end
 
+case node[:quantum][:networking_plugin]
+when "openvswitch"
+  interface_driver = "quantum.agent.linux.interface.OVSInterfaceDriver"
+when "linuxbridge"
+  interface_driver = "quantum.agent.linux.interface.BridgeInterfaceDriver"
+end
+
 # Hardcode for now.
 template "/etc/quantum/l3_agent.ini" do
   source "l3_agent.ini.erb"
@@ -108,7 +115,7 @@ template "/etc/quantum/l3_agent.ini" do
   mode "0640"
   variables(
             :debug => node[:quantum][:debug],
-            :interface_driver => "quantum.agent.linux.interface.OVSInterfaceDriver",
+            :interface_driver => interface_driver,
             :use_namespaces => "True",
             :handle_internal_only_routers => "True",
             :metadata_port => 9697,
@@ -126,7 +133,7 @@ template "/etc/quantum/dhcp_agent.ini" do
   mode "0640"
   variables(
             :debug => node[:quantum][:debug],
-            :interface_driver => "quantum.agent.linux.interface.OVSInterfaceDriver",
+            :interface_driver => interface_driver,
             :use_namespaces => "True",
             :resync_interval => 5,
             :dhcp_driver => "quantum.agent.linux.dhcp.Dnsmasq",
@@ -172,22 +179,41 @@ service node[:quantum][:platform][:metadata_agent_name] do
   subscribes :restart, resources("template[/etc/quantum/metadata_agent.ini]")
 end
 
-directory "/etc/quantum/plugins/openvswitch/" do
-   mode 00775
-   owner node[:quantum][:platform][:user]
-   action :create
-   recursive true
+case node[:quantum][:networking_plugin]
+when "openvswitch"
+  directory "/etc/quantum/plugins/openvswitch/" do
+     mode 00775
+     owner node[:quantum][:platform][:user]
+     action :create
+     recursive true
+  end
+when "linuxbridge"
+  directory "/etc/quantum/plugins/linuxbridge/" do
+     mode 00775
+     owner node[:quantum][:platform][:user]
+     action :create
+     recursive true
+  end
 end
 
 unless node[:quantum][:use_gitrepo]
-  link "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
-    to "/etc/quantum/quantum.conf"
+  case node[:quantum][:networking_plugin]
+  when "openvswitch"
+    link "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
+      to "/etc/quantum/quantum.conf"
+    end
+    plugin_cfg_path = "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
+  when "linuxbridge"
+    link "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini" do
+      to "/etc/quantum/quantum.conf"
+    end
+    plugin_cfg_path = "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini"
   end
   service node[:quantum][:platform][:service_name] do
     supports :status => true, :restart => true
     action :enable
     subscribes :restart, resources("template[/etc/quantum/api-paste.ini]"), :immediately
-    subscribes :restart, resources("link[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]"), :immediately
+    subscribes :restart, resources("link[#{plugin_cfg_path}]"), :immediately
     subscribes :restart, resources("template[/etc/quantum/quantum.conf]")
   end
 else

@@ -47,6 +47,7 @@ locale_additions:
           keystone_instance: Keystone 
           attributes: Attributes
           networking_mode: Mode
+          networking_plugin: Plugin
 
 debs:
   ubuntu-12.04:

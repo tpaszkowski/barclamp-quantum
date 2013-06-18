@@ -69,12 +69,19 @@ ENV['OS_PASSWORD'] = admin_password
 ENV['OS_TENANT_NAME'] = admin_tenant
 ENV['OS_AUTH_URL'] = "http://#{keystone_address}:#{keystone_service_port}/v2.0/"
 
-if node[:quantum][:networking_mode] == 'vlan'
-  fixed_network_type = "--provider:network_type vlan --provider:segmentation_id #{fixed_net["vlan"]} --provider:physical_network physnet1"
-elsif node[:quantum][:networking_mode] == 'gre'
-  fixed_network_type = "--provider:network_type gre --provider:segmentation_id 1"
-else
-  fixed_network_type = "--provider:network_type flat --provider:physical_network physnet1"
+case node[:quantum][:networking_plugin]
+when "openvswitch"
+  floating_network_type = ""
+  if node[:quantum][:networking_mode] == 'vlan'
+    fixed_network_type = "--provider:network_type vlan --provider:segmentation_id #{fixed_net["vlan"]} --provider:physical_network physnet1"
+  elsif node[:quantum][:networking_mode] == 'gre'
+    fixed_network_type = "--provider:network_type gre --provider:segmentation_id 1"
+  else
+    fixed_network_type = "--provider:network_type flat --provider:physical_network physnet1"
+  end
+when "linuxbridge"
+    fixed_network_type = "--provider:network_type vlan --provider:segmentation_id #{fixed_net["vlan"]} --provider:physical_network physnet1"
+    floating_network_type = "--provider:network_type vlan --provider:segmentation_id #{public_net["vlan"]} --provider:physical_network physnet1"
 end
 
 execute "create_fixed_network" do
@@ -83,7 +90,7 @@ execute "create_fixed_network" do
 end
 
 execute "create_floating_network" do
-  command "quantum net-create floating --router:external=True"
+  command "quantum net-create floating --router:external=True #{floating_network_type}"
   not_if "quantum net-list | grep -q ' floating '"
 end
 
@@ -144,4 +151,23 @@ if node[:quantum][:networking_mode] != "local"
       end
     end
   end
+end
+
+if node[:quantum][:networking_plugin] == "linuxbridge"
+  ruby_block "usurp external bridge" do
+    block do
+      require 'csv'
+      csv_data = `quantum net-list -f csv -c id -c name -- --name floating`
+      Chef::Log.info(csv_data)
+      name = "brq" + CSV.parse(csv_data)[1][0][0,11]
+      bound_if = (node[:crowbar_wall][:network][:nets][:public].last rescue nil)
+      target = ::Nic.new(name)
+      res = target.usurp(bound_if)
+      # this place is reach only when target.usurp has move ip addresses
+      Chef::Log.info("#{name} usurped #{res[0].join(", ")} addresses from #{bound_if}") unless res[0].empty?
+      Chef::Log.info("#{name} usurped #{res[1].join(", ")} routes from #{bound_if}") unless res[1].empty?
+      node.set[:quantum][:network][:floating_bridge_name] = name
+      node.save
+  end
+end
 end
