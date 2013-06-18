@@ -12,6 +12,7 @@ action :create do
     bridge = ::Nic.new(bridge_name)
     new_resource.slaves.each do |slave|
       unless bridge.slaves.member?(slave):
+        Chef::Log.info("Enslaving #{slave} to #{bridge_name} !")
         bridge.usurp(slave)
         bridge.add_slave(slave)
         updated = true
