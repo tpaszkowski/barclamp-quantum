@@ -75,8 +75,8 @@ auth_region = RegionOne
 admin_tenant_name = <%= @keystone_service_tenant %>
 admin_user = <%= @keystone_service_user %>
 admin_password = <%= @keystone_service_password %>
-interface_driver = quantum.agent.linux.interface.OVSInterfaceDriver
-external_network_bridge = br-public
+interface_driver = <%= @interface_driver %>
+external_network_bridge = <%= @external_network_bridge %>
 router_scheduler_driver = quantum.scheduler.l3_agent_scheduler.ChanceScheduler
 router_auto_schedule = True
 metadata_ip = <%= @metadata_address %>

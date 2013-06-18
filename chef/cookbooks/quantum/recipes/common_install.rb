@@ -233,15 +233,20 @@ case node[:quantum][:networking_plugin]
 when "openvswitch"
   plugin_cfg_path = "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
   physnet = quantum[:quantum][:networking_mode] == 'gre' ? "br-tunnel" : "br-fixed"
+  interface_driver = "quantum.agent.linux.interface.OVSInterfaceDriver"
+  external_network_bridge = "br-public"
 when "linuxbridge"
   plugin_cfg_path = "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini"
   physnet = (node[:crowbar_wall][:network][:nets][:public].first rescue nil)
+  interface_driver = "quantum.agent.linux.interface.BridgeInterfaceDriver"
+  external_network_bridge = ""
 end
 
 link plugin_cfg_path do
   to "/etc/quantum/quantum.conf"
   notifies :restart, resources(:service => quantum_agent), :immediately
 end
+
 
 template "/etc/quantum/quantum.conf" do
     cookbook "quantum"
@@ -275,6 +280,8 @@ template "/etc/quantum/quantum.conf" do
       :vlan_start => vlan_start,
       :vlan_end => vlan_end,
       :physnet => physnet,
+      :interface_driver => interface_driver,
+      :external_network_bridge => external_network_bridge,
       :rootwrap_bin =>  quantum[:quantum][:rootwrap]
     )
     notifies :restart, resources(:service => quantum_agent), :immediately
