@@ -14,6 +14,12 @@
 #
 
 unless node[:quantum][:use_gitrepo]
+  case node[:quantum][:networking_plugin]
+  when "openvswitch"
+    plugin_cfg_path = "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
+  when "linuxbridge"
+    plugin_cfg_path = "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini"
+  end
   pkgs = node[:quantum][:platform][:pkgs]
   pkgs.each { |p| package p }
   file "/etc/default/quantum-server" do
@@ -27,7 +33,7 @@ unless node[:quantum][:use_gitrepo]
     group "root"
     mode 0640
     variables(
-      :plugin_config_file => "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
+      :plugin_config_file => plugin_cfg_path
     )
     only_if { node[:platform] == "suse" }
     notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
@@ -199,17 +205,8 @@ when "linuxbridge"
 end
 
 unless node[:quantum][:use_gitrepo]
-  case node[:quantum][:networking_plugin]
-  when "openvswitch"
-    link "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
-      to "/etc/quantum/quantum.conf"
-    end
-    plugin_cfg_path = "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
-  when "linuxbridge"
-    link "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini" do
-      to "/etc/quantum/quantum.conf"
-    end
-    plugin_cfg_path = "/etc/quantum/plugins/linuxbridge/linuxbridge_conf.ini"
+  link plugin_cfg_path do
+    to "/etc/quantum/quantum.conf"
   end
   service node[:quantum][:platform][:service_name] do
     supports :status => true, :restart => true
