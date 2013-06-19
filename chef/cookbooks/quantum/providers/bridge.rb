@@ -16,12 +16,12 @@ action :create do
         bridge.add_slave(slave)
         updated = true
       end
-    end
-    res = bridge.usurp(slave)
-    if res[0].any? or res[1].any?
-      updated = true
-      Chef::Log.info("#{bridge_name} usurped #{res[0].join(", ")} addresses from #{slave}") unless res[0].empty?
-      Chef::Log.info("#{bridge_name} usurped #{res[1].join(", ")} routes from #{slave}") unless res[1].empty?
+      res = bridge.usurp(slave)
+      if res[0].any? or res[1].any?
+        updated = true
+        Chef::Log.info("#{bridge_name} usurped #{res[0].join(", ")} addresses from #{slave}") unless res[0].empty?
+        Chef::Log.info("#{bridge_name} usurped #{res[1].join(", ")} routes from #{slave}") unless res[1].empty?
+      end
     end
     new_resource.updated_by_last_action(updated)
   end
