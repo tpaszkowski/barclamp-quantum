@@ -125,7 +125,6 @@ template "/etc/sudoers.d/quantum-rootwrap" do
   mode 0440
   variables(:user => node[:quantum][:platform][:user],
             :binary => node[:quantum][:rootwrap])
-  not_if { node[:platform] == "suse" }
 end
 
 case quantum[:quantum][:networking_plugin]
