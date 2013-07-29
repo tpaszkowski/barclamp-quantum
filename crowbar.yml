@@ -49,6 +49,7 @@ locale_additions:
           dhcp_domain: DHCP Domain
           networking_plugin: Plugin
           networking_mode: Mode
+          cisco_support: Cisco Support
           protocol: Protocol
           ssl_insecure: SSL Certificate is insecure (for instance, auto-signed)
           ssl_certfile: SSL Certificate File
