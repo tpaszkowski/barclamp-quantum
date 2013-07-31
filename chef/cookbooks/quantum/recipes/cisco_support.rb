@@ -1,4 +1,4 @@
-node[:quantum][:platform][:cisco_pkgs].each { |p| package p }
+#node[:quantum][:platform][:cisco_pkgs].each { |p| package p }
 
 quantum = node
 
@@ -80,14 +80,27 @@ template "/etc/quantum/plugins/cisco/l2network_plugin.ini" do
 end
 
 computes = search(:node, "crowbar_cisco_switch_ip:* AND crowbar_cisco_switch_port:*") or []
-Chef::Log.info("Computes #{computes}")
+switches = {}
+computes.each do |compute|
+  next if compute[:crowbar].nil?
+  next if compute[:crowbar][:cisco_switch].nil?
+  next if compute[:crowbar][:cisco_switch][:ip].nil?
+  next if compute[:crowbar][:cisco_switch][:port].nil?
+  ip = compute[:crowbar][:cisco_switch][:ip]
+  port = compute[:crowbar][:cisco_switch][:port]
+  if ip.length and port.length
+    switches[ip] = {} if switches[ip].nil?
+    switches[ip][port] = {} if switches[ip][port].nil?
+    switches[ip][port][:host] = compute[:hostname]
+  end
+end
 template "/etc/quantum/plugins/cisco/nexus.ini" do
   cookbook "quantum"
   source "cisco_nexus.ini.erb"
   mode "0640"
   owner node[:quantum][:platform][:user]
   variables(
-    :computes => computes
+    :switches => switches
   )
   notifies :restart, "service[#{node[:quantum][:platform][:service_name]}]"
 end

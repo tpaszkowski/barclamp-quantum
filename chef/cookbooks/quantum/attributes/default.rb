@@ -74,7 +74,7 @@ when "suse"
     :ovs_pkgs => [ "openvswitch",
                    "openvswitch-switch",
                    "openvswitch-kmp-default" ],
-    :cisco_pkgs => [ "openstack-quantum-cisco" ],
+    :cisco_pkgs => [ "openstack-quantum-plugin-cisco" ],
     :user => "openstack-quantum",
     :ovs_modprobe => "modprobe openvswitch",
     :quantum_rootwrap_sudo_template => "/etc/sudoers.d/openstack-quantum"
